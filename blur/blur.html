@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="height=device-height,width=device-width,initial-scale=1.0,minimum-scale = 1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Canvas玩儿转红包照片</title>
+</head>
+<!-- style begin -->
+<style>
+	*{
+	    margin:0 0;
+	    padding:0 0;
+	}
+
+	#blur-div{
+	    margin:0 auto;
+	    position: relative;
+	    overflow: hidden;
+	}
+
+	#blur-image {
+	    display: block;
+	    margin: 0 auto;
+
+	    filter: blur(20px);
+	    -webkit-filter: blur(20px);
+	    -moz-filter: blur(20px);
+	    -ms-filter: blur(20px);
+	    -o-filter: blur(20px);
+
+	    position: absolute;
+	    left:0px;
+	    top:0px;
+	    z-index: 0;
+	}
+
+	#canvas{
+	    display:block;
+	    margin:0 auto;
+
+	    position: absolute;
+	    left:0px;
+	    top:0px;
+	    z-index: 100;
+	}
+
+	.button{
+	    display:block;
+	    position: absolute;
+	    z-index: 200;
+
+	    width:100px;
+	    height:30px;
+
+	    color:white;
+	    text-decoration: none;
+	    text-align: center;
+	    line-height: 30px;
+
+	    border-radius: 5px;
+	}
+
+	#reset-button{
+	    left:50px;
+	    bottom:20px;
+	    background-color: #058;
+	}
+	#reset-button:hover{
+	    background-color: #047;
+	}
+
+	#show-button{
+	    right:50px;
+	    bottom:20px;
+	    background-color: #085;
+	}
+	#show-button:hover{
+	    background-color: #074;
+	}
+</style>
+<!-- style end -->
+<body>
+  <!-- blur begin -->
+  <div id="blur-div">
+      <img id="blur-image" src="image.jpg"/>
+      <canvas id="canvas"></canvas>
+      <a href="javascript:reset()" class="button" id="reset-button">RESET</a>
+      <a href="javascript:show()" class="button" id="show-button">SHOW</a>
+  </div>
+  <!-- blur end -->
+</body>
+<!-- script begin -->
+<script src="jquery-2.2.0.min.js"></script>
+<script>
+	var canvasWidth = window.innerWidth,
+        canvasHeight = window.innerHeight,
+
+        canvas = document.getElementById("canvas"),
+        context = canvas.getContext("2d");
+
+	canvas.width = canvasWidth;
+	canvas.height = canvasHeight;
+
+	var image = new Image();
+	var radius = 50;
+	var clippingRegion = {x: -1 , y: -1 , r: radius};
+	var leftMargin = 0 , topMargin = 0;
+
+	var theAnimation = null;
+
+	image.src = "image.jpg";
+	image.onload = function(e){
+
+	    $("#blur-div").css("width",canvasWidth+"px");
+	    $("#blur-div").css("height",canvasHeight+"px");
+
+	    $("#blur-image").css("width",image.width+"px");
+	    $("#blur-image").css("height",image.height+"px");
+
+	    leftMargin = (image.width - canvas.width)/2;
+	    topMargin = (image.height - canvas.height)/2;
+
+	    $("#blur-image").css("top",String(-topMargin)+"px");
+	    $("#blur-image").css("left",String(-leftMargin)+"px");
+
+	    initCanvas();
+	}
+
+	function initCanvas(){
+
+	    var theleft = leftMargin<0?-leftMargin:0;
+	    var thetop = topMargin<0?-topMargin:0;
+	    clippingRegion = {  x: Math.random()*(canvas.width-2*radius-2*theleft)+radius+theleft ,
+	                        y: Math.random()*(canvas.height-2*radius-2*thetop)+radius+thetop , r: radius};
+	    draw( image , clippingRegion );
+	}
+
+	function setClippingRegion( clippingRegion ){
+
+	    context.beginPath();
+	    context.arc( clippingRegion.x , clippingRegion.y , clippingRegion.r , 0 , Math.PI*2 , false );
+	    context.clip();
+	}
+
+	function draw( image , clippingRegion ){
+
+	    context.clearRect( 0 , 0 , canvas.width , canvas.height );
+
+	    context.save();
+	    setClippingRegion( clippingRegion );
+	    context.drawImage(image,
+	        Math.max(leftMargin,0), Math.max(topMargin,0),
+	        Math.min(canvas.width,image.width), Math.min(canvas.height,image.height),
+	        leftMargin<0?-leftMargin:0, topMargin<0?-topMargin:0,
+	        Math.min(canvas.width,image.width), Math.min(canvas.height,image.height));
+	    context.restore();
+	}
+
+	function reset(){
+
+	    if( theAnimation != null ){
+	        clearInterval(theAnimation);
+	        theAnimation = null;
+	    }
+	    initCanvas();
+	}
+
+	function show(){
+
+	    if(theAnimation == null){
+	        theAnimation = setInterval(
+	            function(){
+	                console.log("animation");
+	                clippingRegion.r += 20;
+	                if( clippingRegion.r > 2*Math.max(canvas.width,canvas.height) ){
+	                    clearInterval(theAnimation);
+	                }
+	                draw( image , clippingRegion );
+	            },
+	            30
+	        )
+	    }
+	}
+
+	canvas.addEventListener("touchstart",function(e){
+	    e.preventDefault();
+	});
+</script>
+<!-- script end -->
+</html>
